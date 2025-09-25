@@ -1,0 +1,56 @@
+name: FoodApp
+description: A food ordering and restaurant management application.
+
+entities:
+  User:
+    authenticable: true
+    properties:
+      - { name: name, validation: { required: true } }
+      - { name: email, type: email, validation: { required: true, unique: true } }
+      - { name: role, type: choice, options: { values: [customer, owner, admin], default: customer }, validation: { required: true } }
+    access_policies:
+      - role: admin
+        permissions: [create, read, update, delete]
+      - role: owner
+        permissions: [read, update]
+        condition: "user.id === id"
+      - role: customer
+        permissions: [read, update]
+        condition: "user.id === id"
+
+  Restaurant:
+    properties:
+      - { name: name, validation: { required: true } }
+      - { name: description, type: text }
+      - { name: address, type: string }
+      - { name: logo, type: image, options: { sizes: { thumbnail: { width: 200, height: 200 } } } }
+    belongsTo:
+      - { name: owner, entity: User }
+    hasMany:
+      - { name: menuItems, entity: MenuItem }
+    access_policies:
+      - role: admin
+        permissions: [create, read, update, delete]
+      - role: owner
+        permissions: [create, read, update, delete]
+        condition: "user.id === owner.id"
+      - role: customer
+        permissions: [read]
+
+  MenuItem:
+    properties:
+      - { name: name, validation: { required: true } }
+      - { name: description, type: text }
+      - { name: price, type: money, options: { currency: 'USD' }, validation: { required: true } }
+      - { name: category, type: string, validation: { required: true } }
+      - { name: image, type: image, options: { sizes: { small: { width: 100, height: 100 } } } }
+    belongsTo:
+      - { name: restaurant, entity: Restaurant }
+    access_policies:
+      - role: admin
+        permissions: [create, read, update, delete]
+      - role: owner
+        permissions: [create, read, update, delete]
+        condition: "user.id === restaurant.owner.id"
+      - role: customer
+        permissions: [read]
